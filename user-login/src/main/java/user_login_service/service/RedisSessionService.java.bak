@@ -22,7 +22,7 @@ public class RedisSessionService {
         // Store session data as a hash
         redisTemplate.opsForHash().put(sessionKey, "userId", userId);
         redisTemplate.opsForHash().put(sessionKey, "email", email);
-        redisTemplate.opsForHash().put(sessionKey, "createdAt", System.currentTimeMillis());
+        redisTemplate.opsForHash().put(sessionKey, "createdAt", String.valueOf(System.currentTimeMillis()));
         
         // Set expiration
         redisTemplate.expire(sessionKey, SESSION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
