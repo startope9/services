@@ -30,8 +30,12 @@ public class LoginController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Collections.singletonMap("error", e.getMessage()));
         } catch (Exception e) {
+            // Log the actual exception for debugging
+            System.err.println("Login error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Internal server error"));
+                    .body(Collections.singletonMap("error", "Internal server error: " + e.getClass().getSimpleName() + " - " + e.getMessage()));
+
         }
     }
 
