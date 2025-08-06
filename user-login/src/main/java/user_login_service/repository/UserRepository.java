@@ -1,6 +1,6 @@
-package user_registration_service.repository;
+package user_login_service.repository;
 
-import user_registration_service.model.User;
+import user_login_service.model.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
