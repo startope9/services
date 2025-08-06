@@ -5,53 +5,35 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class RedisSessionService {
 
+    private static final String SESSION_PREFIX = "user_session:";
+
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    private static final String SESSION_PREFIX = "user_session:";
-    private static final long SESSION_TIMEOUT_SECONDS = 86400; // 24 hours
-
     public void storeSession(String sessionId, String userId, String email) {
-        String sessionKey = SESSION_PREFIX + sessionId;
-        
-        // Store session data as a hash
-        redisTemplate.opsForHash().put(sessionKey, "userId", userId);
-        redisTemplate.opsForHash().put(sessionKey, "email", email);
-        redisTemplate.opsForHash().put(sessionKey, "createdAt", System.currentTimeMillis());
-        
-        // Set expiration
-        redisTemplate.expire(sessionKey, SESSION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        String key = SESSION_PREFIX + sessionId;
+
+        Map<String, String> sessionData = new HashMap<>();
+        sessionData.put("userId", String.valueOf(userId));   // 🔥 ensure String
+        sessionData.put("email", String.valueOf(email));     // 🔥 ensure String
+
+        redisTemplate.opsForHash().putAll(key, sessionData);
+        redisTemplate.expire(key, Duration.ofHours(24)); // Set expiration
     }
 
     public boolean isSessionValid(String sessionId) {
-        String sessionKey = SESSION_PREFIX + sessionId;
-        return Boolean.TRUE.equals(redisTemplate.hasKey(sessionKey));
+        String key = SESSION_PREFIX + sessionId;
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }
 
-    public String getUserIdFromSession(String sessionId) {
-        String sessionKey = SESSION_PREFIX + sessionId;
-        return (String) redisTemplate.opsForHash().get(sessionKey, "userId");
-    }
-
-    public String getEmailFromSession(String sessionId) {
-        String sessionKey = SESSION_PREFIX + sessionId;
-        return (String) redisTemplate.opsForHash().get(sessionKey, "email");
-    }
-
-    public void removeSession(String sessionId) {
-        String sessionKey = SESSION_PREFIX + sessionId;
-        redisTemplate.delete(sessionKey);
-    }
-
-    public void extendSession(String sessionId) {
-        String sessionKey = SESSION_PREFIX + sessionId;
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(sessionKey))) {
-            redisTemplate.expire(sessionKey, SESSION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        }
+    public void deleteSession(String sessionId) {
+        String key = SESSION_PREFIX + sessionId;
+        redisTemplate.delete(key);
     }
 }

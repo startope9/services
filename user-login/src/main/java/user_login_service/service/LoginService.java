@@ -9,52 +9,54 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class LoginService {
 
-    // MongoDB repository is disabled temporarily for testing
-    // @Autowired
-    // private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
 
-    // Redis session service is disabled temporarily for testing
-    // @Autowired
-    // private RedisSessionService redisSessionService;
+    @Autowired
+    private RedisSessionService redisSessionService; // ✅ Inject session service
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public LoginResponse authenticate(LoginRequest loginRequest) {
-        // Temporary: Create a test user bypassing MongoDB and Redis
         try {
             System.out.println("Starting authentication for: " + loginRequest.getEmail());
-            
-            // Skip MongoDB lookup and create a test user
-            User testUser = new User();
-            testUser.setId("test-user-id");
-            testUser.setEmail(loginRequest.getEmail().toLowerCase());
-            testUser.setPasswordHash(encoder.encode("TestPass123"));
-            
-            System.out.println("Test user created");
 
-            // Verify password (for test user, accept TestPass123)
-            if (!"TestPass123".equals(loginRequest.getPassword())) {
+            // Lookup user
+            Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail().toLowerCase());
+            if (optionalUser.isEmpty()) {
                 throw new IllegalArgumentException("Invalid email or password");
             }
-            
+
+            User user = optionalUser.get();
+
+            // Check password
+            if (!encoder.matches(loginRequest.getPassword(), user.getPasswordHash())) {
+                throw new IllegalArgumentException("Invalid email or password");
+            }
+
             System.out.println("Password verified");
 
-            // Generate JWT token - this is where the error likely occurs
-            String token = jwtUtil.generateToken(testUser.getId(), testUser.getEmail());
+            // Generate JWT token
+            String token = jwtUtil.generateToken(user.getId(), user.getEmail());
             System.out.println("JWT token generated successfully");
-            
-            // Skip Redis storage to isolate JWT issue
-            System.out.println("Skipping Redis storage for testing");
 
-            return new LoginResponse(token, "Login successful", testUser.getId(), testUser.getEmail());
+            // ✅ Extract session ID (jti) from token
+            String sessionId = jwtUtil.getSessionIdFromToken(token);
+
+            // ✅ Store session in Redis
+            redisSessionService.storeSession(sessionId, user.getId(), user.getEmail());
+
+            return new LoginResponse(token, "Login successful", user.getId(), user.getEmail());
         } catch (Exception e) {
-            System.err.println("Authentication error details: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            System.err.println("Authentication error: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
@@ -62,23 +64,12 @@ public class LoginService {
 
     public boolean validateSession(String token) {
         try {
-            // First validate JWT token structure and signature
             if (!jwtUtil.validateToken(token) || jwtUtil.isTokenExpired(token)) {
                 return false;
             }
 
-            // Skip Redis check for testing
-            // String sessionId = jwtUtil.getSessionIdFromToken(token);
-            // boolean isValid = redisSessionService.isSessionValid(sessionId);
-            // 
-            // // Extend session if valid
-            // if (isValid) {
-            //     redisSessionService.extendSession(sessionId);
-            // }
-            // 
-            // return isValid;
-            
-            return true; // For testing, just return true if JWT is valid
+            String sessionId = jwtUtil.getSessionIdFromToken(token);
+            return redisSessionService.isSessionValid(sessionId); // ✅ Check in Redis
         } catch (Exception e) {
             return false;
         }
