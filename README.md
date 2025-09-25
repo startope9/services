@@ -25,7 +25,7 @@ This project consists of three microservices that handle user authentication wit
 
 ### User Registration Service (Port 8081)
 - **Endpoint**: `POST /api/register`
-- **Database**: `patent_auth` collection `users`
+- **Database**: `pdf_ai` collection `users`
 - **Features**:
   - Email format validation
   - Password strength requirements (8+ chars, upper/lower case, digit)
@@ -181,6 +181,20 @@ cd user-login
 # Start Logout Service
 cd user-logout
 ./mvnw spring-boot:run
+```
+
+```windows cmd prompt
+# Start Registration Service
+cd user-registration
+mvn spring-boot:run
+
+# Start Login Service
+cd user-login
+mvn spring-boot:run
+
+# Start Logout Service
+cd user-logout
+mvn spring-boot:run
 ```
 
 ## Configuration

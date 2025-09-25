@@ -15,7 +15,7 @@ public class MongoConfig {
 
     @Bean
     public MongoClient mongoClient() {
-        ConnectionString connectionString = new ConnectionString("mongodb://localhost:27017/patent_auth");
+        ConnectionString connectionString = new ConnectionString("mongodb://localhost:27017/pdf_ai");
         MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
             .build();
@@ -24,7 +24,7 @@ public class MongoConfig {
 
     @Bean
     public MongoDatabaseFactory mongoDatabaseFactory() {
-        return new SimpleMongoClientDatabaseFactory(mongoClient(), "patent_auth"); 
+        return new SimpleMongoClientDatabaseFactory(mongoClient(), "pdf_ai"); 
     }
 
     @Bean
